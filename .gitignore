@@ -1,0 +1,17 @@
+.vercel
+node_modules
+.env
+package-lock.json
+dist/
+
+# Server env & build
+server/.env
+server/dist
+
+# Firebase service account keys — NEVER commit these
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+.env*
+
+# Next.js
+.next/
