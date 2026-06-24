@@ -233,7 +233,7 @@ export function useNodeOperations({
   );
 
   const onNodeDragStop = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: any, node: Node) => {
       if (node.type !== "custom") return;
       setNodes((ns) => {
         let absX = node.position.x;
