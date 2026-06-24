@@ -43,7 +43,10 @@ export async function POST(req: Request) {
 
       if (insertError || !createdProfile) {
         console.error("Profile fallback insert error:", insertError);
-        return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 });
+        return NextResponse.json(
+          { error: "Failed to create user profile", details: insertError?.message ?? insertError },
+          { status: 500 }
+        );
       }
 
       return NextResponse.json({ profile: createdProfile }, { status: 201 });

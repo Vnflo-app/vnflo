@@ -451,9 +451,10 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (!authInitialized) return;
+    if (authLoading) return; // still fetching profile — don't redirect yet
     if (!user) { navigate("/auth"); return; }
     loadDiagrams(user.id);
-  }, [user, authInitialized]);
+  }, [user, authInitialized, authLoading]);
 
   // Sync profile details when user profile updates
   useEffect(() => {
