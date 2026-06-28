@@ -77,113 +77,153 @@ export interface NodeTheme {
   borderColor: string;
   textColor: string;
 }
-
+// Old theme
+// export const NODE_THEMES: NodeTheme[] = [
+//   { name: "Midnight Indigo", bgColor: "#4f46e5", borderColor: "#a5b4fc", textColor: "#ffffff" },
+//   { name: "Crisp Slate", bgColor: "#ffffff", borderColor: "#94a3b8", textColor: "#0f1b2d" },
+//   { name: "Vibrant Earth", bgColor: "#d97706", borderColor: "#fde68a", textColor: "#1c1917" },
+//   { name: "Cyber Mint", bgColor: "#059669", borderColor: "#34d399", textColor: "#ffffff" },
+//   { name: "Synthwave 84", bgColor: "#ff006e", borderColor: "#ffbe0b", textColor: "#ffffff" },
+//   { name: "Soft Pastel Dream", bgColor: "#c4b5fd", borderColor: "#f582ae", textColor: "#1f1e38" },
+//   { name: "Monochrome Brutalism", bgColor: "#080808", borderColor: "#ef4444", textColor: "#ffffff" },
+// ];
+// new node theme
 export const NODE_THEMES: NodeTheme[] = [
-  { name: "Midnight Indigo", bgColor: "#4f46e5", borderColor: "#a5b4fc", textColor: "#ffffff" },
-  { name: "Crisp Slate", bgColor: "#ffffff", borderColor: "#94a3b8", textColor: "#0f1b2d" },
-  { name: "Vibrant Earth", bgColor: "#d97706", borderColor: "#fde68a", textColor: "#1c1917" },
-  { name: "Cyber Mint", bgColor: "#059669", borderColor: "#34d399", textColor: "#ffffff" },
-  { name: "Synthwave 84", bgColor: "#ff006e", borderColor: "#ffbe0b", textColor: "#ffffff" },
-  { name: "Soft Pastel Dream", bgColor: "#c4b5fd", borderColor: "#f582ae", textColor: "#1f1e38" },
-  { name: "Monochrome Brutalism", bgColor: "#080808", borderColor: "#ef4444", textColor: "#ffffff" },
+  // --- Clean & Minimal (Great for Light Mode / Wireframing) ---
+  { 
+    name: "Minimal Slate", 
+    bgColor: "#ffffff", 
+    borderColor: "#94a3b8", 
+    textColor: "#0f172a" 
+  },
+  { 
+    name: "Soft Graphite", 
+    bgColor: "#f8fafc", 
+    borderColor: "#475569", 
+    textColor: "#1e293b" 
+  },
+
+  // --- Indigo / Blue Family (Tech & Architecture) ---
+  { 
+    name: "Indigo Solid", 
+    bgColor: "#4f46e5", 
+    borderColor: "#6366f1", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Indigo", 
+    bgColor: "#e0e7ff", 
+    borderColor: "#818cf8", 
+    textColor: "#312e81" 
+  },
+  { 
+    name: "Ocean Blue", 
+    bgColor: "#0284c7", 
+    borderColor: "#38bdf8", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Sky", 
+    bgColor: "#e0f2fe", 
+    borderColor: "#7dd3fc", 
+    textColor: "#0c4a6e" 
+  },
+
+  // --- Green Family (Success States / Eco) ---
+  { 
+    name: "Emerald Solid", 
+    bgColor: "#059669", 
+    borderColor: "#10b981", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Mint", 
+    bgColor: "#d1fae5", 
+    borderColor: "#34d399", 
+    textColor: "#064e3b" 
+  },
+
+  // --- Warm Family (Warning States / Org Charts) ---
+  { 
+    name: "Amber Solid", 
+    bgColor: "#d97706", 
+    borderColor: "#f59e0b", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Sand", 
+    bgColor: "#fef3c7", 
+    borderColor: "#fbbf24", 
+    textColor: "#78350f" 
+  },
+  { 
+    name: "Rose Solid", 
+    bgColor: "#e11d48", 
+    borderColor: "#fb7185", 
+    textColor: "#ffffff" 
+  },
+
+  // --- Dark Mode / High Contrast (Great for Dark/Midnight/Ocean Canvas Themes) ---
+  { 
+    name: "Midnight Node", 
+    bgColor: "#1e1b4b", 
+    borderColor: "#a5b4fc", 
+    textColor: "#e0e7ff" 
+  },
+  { 
+    name: "Deep Slate", 
+    bgColor: "#0f172a", 
+    borderColor: "#64748b", 
+    textColor: "#f1f5f9" 
+  },
 ];
 
-export interface ColorPanelProps extends Omit<NodeTheme, "name"> {
-  onChange: (field: "bgColor" | "borderColor" | "textColor", value: string) => void;
-  onThemeSelect?: (theme: NodeTheme) => void;
+export interface ThemePanelProps {
+  bgColor: string;
+  borderColor: string;
+  textColor: string;
+  onThemeSelect: (theme: NodeTheme) => void;
 }
 
-export function ColorPanel({ bgColor, borderColor, textColor, onChange, onThemeSelect }: ColorPanelProps) {
+export function ThemePanel({ bgColor, borderColor, textColor, onThemeSelect }: ThemePanelProps) {
   const { theme } = useEditorTheme();
-  const [active, setActive] = useState<"bgColor" | "borderColor" | "textColor">("bgColor");
-  const current = { bgColor, borderColor, textColor }[active];
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Field selector */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: theme.surfaceHover }}>
-        {(["bgColor", "borderColor", "textColor"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setActive(f)}
-            className="flex-1 py-1.5 rounded-lg text-xs transition-all"
-            style={{
-              background: active === f ? `${theme.accent}25` : "transparent",
-              color: active === f ? theme.textPrimary : theme.textMuted,
-              fontWeight: active === f ? 600 : 400,
-            }}
-          >
-            {f === "bgColor" ? "Fill" : f === "borderColor" ? "Border" : "Text"}
-          </button>
-        ))}
-      </div>
-
-      {/* Current color + hex input */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: current, border: `1px solid ${theme.border}` }} />
-        <input
-          type="text"
-          value={current}
-          onChange={(e) => onChange(active, e.target.value)}
-          className="flex-1 px-3 py-2 rounded-lg text-sm font-mono focus:outline-none"
-          style={{ border: `1px solid ${theme.border}`, background: theme.surfaceHover, color: theme.textPrimary }}
-          placeholder="#000000"
-        />
-        <input
-          type="color"
-          value={current}
-          onChange={(e) => onChange(active, e.target.value)}
-          className="w-9 h-9 rounded-lg cursor-pointer border-0 bg-transparent p-0"
-          style={{ WebkitAppearance: "none" }}
-        />
-      </div>
-
-      {/* Presets - Node Themes */}
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>Node Themes</p>
-        <div className="grid grid-cols-2 gap-2">
-          {NODE_THEMES.map((t) => {
-            const isSelected = bgColor.toLowerCase() === t.bgColor.toLowerCase() &&
-              borderColor.toLowerCase() === t.borderColor.toLowerCase() &&
-              textColor.toLowerCase() === t.textColor.toLowerCase();
-            return (
-              <button
-                key={t.name}
-                type="button"
-                onClick={() => {
-                  if (onThemeSelect) {
-                    onThemeSelect(t);
-                  } else {
-                    onChange("bgColor", t.bgColor);
-                    onChange("borderColor", t.borderColor);
-                    onChange("textColor", t.textColor);
-                  }
-                }}
-                title={t.name}
-                className="flex items-center gap-2 p-2 rounded-xl border transition-all text-left hover:scale-[1.02] cursor-pointer"
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        {NODE_THEMES.map((t) => {
+          const isSelected = bgColor.toLowerCase() === t.bgColor.toLowerCase() &&
+            borderColor.toLowerCase() === t.borderColor.toLowerCase() &&
+            textColor.toLowerCase() === t.textColor.toLowerCase();
+          return (
+            <button
+              key={t.name}
+              type="button"
+              onClick={() => onThemeSelect(t)}
+              title={t.name}
+              className="flex items-center gap-2 p-2 rounded-xl border transition-all text-left hover:scale-[1.02] cursor-pointer"
+              style={{
+                borderColor: isSelected ? theme.accent : theme.border,
+                background: theme.surfaceHover,
+              }}
+            >
+              {/* Visual Preview */}
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0"
                 style={{
-                  borderColor: isSelected ? theme.accent : theme.border,
-                  background: theme.surfaceHover,
+                  backgroundColor: t.bgColor,
+                  borderColor: t.borderColor,
+                  color: t.textColor,
                 }}
               >
-                {/* Visual Preview */}
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0"
-                  style={{
-                    backgroundColor: t.bgColor,
-                    borderColor: t.borderColor,
-                    color: t.textColor,
-                  }}
-                >
-                  <span className="text-[10px] font-bold">Aa</span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-semibold truncate" style={{ color: theme.textPrimary }}>{t.name}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                <span className="text-[10px] font-bold">Aa</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold truncate" style={{ color: theme.textPrimary }}>{t.name}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -1012,9 +1052,8 @@ export function ToolsPanel({
                 </div>
               )}
               {activeTab === "colors" && (
-                <ColorPanel
+                <ThemePanel
                   {...colors}
-                  onChange={onColorChange}
                   onThemeSelect={(t) => {
                     onColorChange("bgColor", t.bgColor);
                     onColorChange("borderColor", t.borderColor);
