@@ -71,23 +71,29 @@ export function ShapePanel({ value, onChange, onAddNode }: ShapePanelProps) {
 
 // ─── Color Panel ─────────────────────────────────────────────────────────────
 
-const PRESET_PALETTES = [
-  ["#D4D8DF", "#2e1065", "#0f172a", "#1c1917", "#0f1b2d"],
-  ["#080808", "#4f46e5", "#0284c7", "#059669", "#d97706"],
-  ["#a78bfa", "#818cf8", "#38bdf8", "#34d399", "#fbbf24"],
-  ["#c4b5fd", "#a5b4fc", "#7dd3fc", "#86efac", "#fde68a"],
-  ["#ffffff", "#f1f5f9", "#e2e8f0", "#cbd5e1", "#94a3b8"],
-  ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6"],
-];
-
-interface ColorPanelProps {
+export interface NodeTheme {
+  name: string;
   bgColor: string;
   borderColor: string;
   textColor: string;
-  onChange: (field: "bgColor" | "borderColor" | "textColor", value: string) => void;
 }
 
-export function ColorPanel({ bgColor, borderColor, textColor, onChange }: ColorPanelProps) {
+export const NODE_THEMES: NodeTheme[] = [
+  { name: "Midnight Indigo", bgColor: "#4f46e5", borderColor: "#a5b4fc", textColor: "#ffffff" },
+  { name: "Crisp Slate", bgColor: "#ffffff", borderColor: "#94a3b8", textColor: "#0f1b2d" },
+  { name: "Vibrant Earth", bgColor: "#d97706", borderColor: "#fde68a", textColor: "#1c1917" },
+  { name: "Cyber Mint", bgColor: "#059669", borderColor: "#34d399", textColor: "#ffffff" },
+  { name: "Synthwave 84", bgColor: "#ff006e", borderColor: "#ffbe0b", textColor: "#ffffff" },
+  { name: "Soft Pastel Dream", bgColor: "#c4b5fd", borderColor: "#f582ae", textColor: "#1f1e38" },
+  { name: "Monochrome Brutalism", bgColor: "#080808", borderColor: "#ef4444", textColor: "#ffffff" },
+];
+
+export interface ColorPanelProps extends Omit<NodeTheme, "name"> {
+  onChange: (field: "bgColor" | "borderColor" | "textColor", value: string) => void;
+  onThemeSelect?: (theme: NodeTheme) => void;
+}
+
+export function ColorPanel({ bgColor, borderColor, textColor, onChange, onThemeSelect }: ColorPanelProps) {
   const { theme } = useEditorTheme();
   const [active, setActive] = useState<"bgColor" | "borderColor" | "textColor">("bgColor");
   const current = { bgColor, borderColor, textColor }[active];
@@ -132,25 +138,52 @@ export function ColorPanel({ bgColor, borderColor, textColor, onChange }: ColorP
         />
       </div>
 
-      {/* Presets */}
-      <div className="flex flex-col gap-1.5">
-        {PRESET_PALETTES.map((row, i) => (
-          <div key={i} className="flex gap-1.5">
-            {row.map((c) => (
+      {/* Presets - Node Themes */}
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>Node Themes</p>
+        <div className="grid grid-cols-2 gap-2">
+          {NODE_THEMES.map((t) => {
+            const isSelected = bgColor.toLowerCase() === t.bgColor.toLowerCase() &&
+              borderColor.toLowerCase() === t.borderColor.toLowerCase() &&
+              textColor.toLowerCase() === t.textColor.toLowerCase();
+            return (
               <button
-                key={c}
-                onClick={() => onChange(active, c)}
-                title={c}
-                className="flex-1 h-7 rounded-lg border transition-all hover:scale-110 relative"
-                style={{ background: c, borderColor: current === c ? "#a78bfa" : "rgba(255,255,255,0.1)" }}
+                key={t.name}
+                type="button"
+                onClick={() => {
+                  if (onThemeSelect) {
+                    onThemeSelect(t);
+                  } else {
+                    onChange("bgColor", t.bgColor);
+                    onChange("borderColor", t.borderColor);
+                    onChange("textColor", t.textColor);
+                  }
+                }}
+                title={t.name}
+                className="flex items-center gap-2 p-2 rounded-xl border transition-all text-left hover:scale-[1.02] cursor-pointer"
+                style={{
+                  borderColor: isSelected ? theme.accent : theme.border,
+                  background: theme.surfaceHover,
+                }}
               >
-                {current === c && (
-                  <Check className="absolute inset-0 m-auto w-3 h-3 text-white" style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.8))" }} />
-                )}
+                {/* Visual Preview */}
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0"
+                  style={{
+                    backgroundColor: t.bgColor,
+                    borderColor: t.borderColor,
+                    color: t.textColor,
+                  }}
+                >
+                  <span className="text-[10px] font-bold">Aa</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-semibold truncate" style={{ color: theme.textPrimary }}>{t.name}</p>
+                </div>
               </button>
-            ))}
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -979,7 +1012,15 @@ export function ToolsPanel({
                 </div>
               )}
               {activeTab === "colors" && (
-                <ColorPanel {...colors} onChange={onColorChange} />
+                <ColorPanel
+                  {...colors}
+                  onChange={onColorChange}
+                  onThemeSelect={(t) => {
+                    onColorChange("bgColor", t.bgColor);
+                    onColorChange("borderColor", t.borderColor);
+                    onColorChange("textColor", t.textColor);
+                  }}
+                />
               )}
               {activeTab === "icons" && (
                 <IconPanel value={iconName} onChange={onIconChange} />
