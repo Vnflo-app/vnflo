@@ -82,21 +82,26 @@ const PRESET_PALETTES = [
 
 interface ColorPanelProps {
   bgColor: string;
-  borderColor: string;
+  borderColor?: string;
   textColor: string;
   onChange: (field: "bgColor" | "borderColor" | "textColor", value: string) => void;
+  hideBorder?: boolean;
 }
 
-export function ColorPanel({ bgColor, borderColor, textColor, onChange }: ColorPanelProps) {
+export function ColorPanel({ bgColor, borderColor, textColor, onChange, hideBorder = false }: ColorPanelProps) {
   const { theme } = useEditorTheme();
   const [active, setActive] = useState<"bgColor" | "borderColor" | "textColor">("bgColor");
-  const current = { bgColor, borderColor, textColor }[active];
+  const current = { bgColor, borderColor: borderColor || "", textColor }[active];
+
+  const tabs = hideBorder
+    ? (["bgColor", "textColor"] as const)
+    : (["bgColor", "borderColor", "textColor"] as const);
 
   return (
     <div className="flex flex-col gap-4">
       {/* Field selector */}
       <div className="flex gap-1 p-1 rounded-xl" style={{ background: theme.surfaceHover }}>
-        {(["bgColor", "borderColor", "textColor"] as const).map((f) => (
+        {tabs.map((f) => (
           <button
             key={f}
             onClick={() => setActive(f)}
