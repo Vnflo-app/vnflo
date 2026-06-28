@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import * as LucideIcons from "lucide-react";
+import { LucideIcons, ICON_NAMES } from "../utils/icons";
 import {
   Square, Circle, Diamond, Hexagon, Triangle, Cylinder, Cloud,
   Palette, ImageIcon, Sparkles, AlignLeft,
@@ -158,20 +158,7 @@ export function ColorPanel({ bgColor, borderColor, textColor, onChange }: ColorP
 
 // ─── Icon Panel ───────────────────────────────────────────────────────────────
 
-const ICON_NAMES = [
-  "User","Users","Building2","GitBranch","Network","Brain","Cpu","Database","Server",
-  "Cloud","Globe","Lock","Shield","Key","Settings","Tool","Wrench","Hammer",
-  "Star","Heart","Bookmark","Tag","Flag","Bell","Mail","Phone","MessageSquare",
-  "Home","MapPin","Navigation","Compass","Map","Truck","Car","Plane","Ship",
-  "FileText","FolderOpen","Clipboard","Edit","Pen","Trash","Archive","Download","Upload",
-  "Play","Pause","SkipForward","Volume2","Music","Video","Image","Camera",
-  "Search","Filter","List","Grid","Layers","Layout","Sidebar","Menu",
-  "ArrowRight","ArrowLeft","ArrowUp","ArrowDown","ChevronRight","RefreshCw",
-  "Check","X","Plus","Minus","Zap","AlertTriangle","Info","HelpCircle",
-  "DollarSign","TrendingUp","BarChart2","PieChart","Activity","Target",
-  "Calendar","Clock","Timer","Hourglass","Package","Box","Inbox","Send",
-  "Wifi","Bluetooth","Battery","Power","Lightbulb","Sun","Moon","Eye",
-];
+// ICON_NAMES is imported from ../utils/icons
 
 interface IconPanelProps {
   value?: string;

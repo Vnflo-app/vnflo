@@ -2,7 +2,7 @@ import { memo, useState, useRef, useEffect, useCallback } from "react";
 import { Handle, Position, type NodeProps, NodeResizer, useConnection, useReactFlow } from "@xyflow/react";
 import { useEditorTheme } from "../context/EditorThemeContext";
 
-import * as Icons from "lucide-react";
+import { LucideIcons as Icons } from "../utils/icons";
 
 export type NodeShape =
   | "rect" | "rounded" | "circle" | "diamond"
@@ -93,7 +93,7 @@ function ShapePath(props: {
         </g>
       );
     default: // rect / rounded
-      return <rect x={sw/2} y={sw/2} width={w-sw} height={h-sw} rx={shape === "rounded" ? 12 : 6} fill={fill} stroke={stroke} strokeWidth={sw} strokeDasharray={sd} />;
+      return <rect x={sw/2} y={sw/2} width={w-sw} height={h-sw} rx={shape === "rounded" ? 12 : 2} fill={fill} stroke={stroke} strokeWidth={sw} strokeDasharray={sd} />;
   }
 }
 
