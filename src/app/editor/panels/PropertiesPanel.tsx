@@ -194,6 +194,15 @@ export function PropertiesPanel({
                   }
                 });
               }}
+              onThemeSelect={(t) => {
+                updateEdge({
+                  style: {
+                    ...edge.style,
+                    stroke: t.bgColor,
+                    strokeWidth: edge.style?.strokeWidth || 2
+                  }
+                });
+              }}
             />
           </div>
         </div>
@@ -344,6 +353,7 @@ export function PropertiesPanel({
                 borderColor={d.borderColor || theme.nodeBorder}
                 textColor={d.textColor || theme.nodeText}
                 onChange={(f, v) => update({ [f]: v })}
+                onThemeSelect={(t) => update({ bgColor: t.bgColor, borderColor: t.borderColor, textColor: t.textColor })}
               />
             </div>
 
@@ -582,6 +592,7 @@ export function PropertiesPanel({
                 borderColor={d.borderColor || theme.nodeBorder}
                 textColor={d.textColor || theme.nodeText}
                 onChange={(f, v) => update({ [f]: v })}
+                onThemeSelect={(t) => update({ bgColor: t.bgColor, borderColor: t.borderColor, textColor: t.textColor })}
               />
             </div>
 
@@ -695,9 +706,10 @@ export function PropertiesPanel({
             <label className={labelCls} style={{ color: theme.textMuted }}>Colors</label>
             <ColorPanel
               bgColor={d.bgColor || theme.nodeBg}
+              borderColor={d.borderColor || theme.nodeBorder}
               textColor={d.textColor || theme.nodeText}
               onChange={(f, v) => update({ [f]: v })}
-              hideBorder={true}
+              onThemeSelect={(t) => update({ bgColor: t.bgColor, borderColor: t.borderColor, textColor: t.textColor })}
             />
           </div>
 
