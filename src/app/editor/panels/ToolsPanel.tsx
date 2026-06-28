@@ -77,15 +77,105 @@ export interface NodeTheme {
   borderColor: string;
   textColor: string;
 }
-
+// Old theme
+// export const NODE_THEMES: NodeTheme[] = [
+//   { name: "Midnight Indigo", bgColor: "#4f46e5", borderColor: "#a5b4fc", textColor: "#ffffff" },
+//   { name: "Crisp Slate", bgColor: "#ffffff", borderColor: "#94a3b8", textColor: "#0f1b2d" },
+//   { name: "Vibrant Earth", bgColor: "#d97706", borderColor: "#fde68a", textColor: "#1c1917" },
+//   { name: "Cyber Mint", bgColor: "#059669", borderColor: "#34d399", textColor: "#ffffff" },
+//   { name: "Synthwave 84", bgColor: "#ff006e", borderColor: "#ffbe0b", textColor: "#ffffff" },
+//   { name: "Soft Pastel Dream", bgColor: "#c4b5fd", borderColor: "#f582ae", textColor: "#1f1e38" },
+//   { name: "Monochrome Brutalism", bgColor: "#080808", borderColor: "#ef4444", textColor: "#ffffff" },
+// ];
+// new node theme
 export const NODE_THEMES: NodeTheme[] = [
-  { name: "Midnight Indigo", bgColor: "#4f46e5", borderColor: "#a5b4fc", textColor: "#ffffff" },
-  { name: "Crisp Slate", bgColor: "#ffffff", borderColor: "#94a3b8", textColor: "#0f1b2d" },
-  { name: "Vibrant Earth", bgColor: "#d97706", borderColor: "#fde68a", textColor: "#1c1917" },
-  { name: "Cyber Mint", bgColor: "#059669", borderColor: "#34d399", textColor: "#ffffff" },
-  { name: "Synthwave 84", bgColor: "#ff006e", borderColor: "#ffbe0b", textColor: "#ffffff" },
-  { name: "Soft Pastel Dream", bgColor: "#c4b5fd", borderColor: "#f582ae", textColor: "#1f1e38" },
-  { name: "Monochrome Brutalism", bgColor: "#080808", borderColor: "#ef4444", textColor: "#ffffff" },
+  // --- Clean & Minimal (Great for Light Mode / Wireframing) ---
+  { 
+    name: "Minimal Slate", 
+    bgColor: "#ffffff", 
+    borderColor: "#94a3b8", 
+    textColor: "#0f172a" 
+  },
+  { 
+    name: "Soft Graphite", 
+    bgColor: "#f8fafc", 
+    borderColor: "#475569", 
+    textColor: "#1e293b" 
+  },
+
+  // --- Indigo / Blue Family (Tech & Architecture) ---
+  { 
+    name: "Indigo Solid", 
+    bgColor: "#4f46e5", 
+    borderColor: "#6366f1", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Indigo", 
+    bgColor: "#e0e7ff", 
+    borderColor: "#818cf8", 
+    textColor: "#312e81" 
+  },
+  { 
+    name: "Ocean Blue", 
+    bgColor: "#0284c7", 
+    borderColor: "#38bdf8", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Sky", 
+    bgColor: "#e0f2fe", 
+    borderColor: "#7dd3fc", 
+    textColor: "#0c4a6e" 
+  },
+
+  // --- Green Family (Success States / Eco) ---
+  { 
+    name: "Emerald Solid", 
+    bgColor: "#059669", 
+    borderColor: "#10b981", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Mint", 
+    bgColor: "#d1fae5", 
+    borderColor: "#34d399", 
+    textColor: "#064e3b" 
+  },
+
+  // --- Warm Family (Warning States / Org Charts) ---
+  { 
+    name: "Amber Solid", 
+    bgColor: "#d97706", 
+    borderColor: "#f59e0b", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Soft Sand", 
+    bgColor: "#fef3c7", 
+    borderColor: "#fbbf24", 
+    textColor: "#78350f" 
+  },
+  { 
+    name: "Rose Solid", 
+    bgColor: "#e11d48", 
+    borderColor: "#fb7185", 
+    textColor: "#ffffff" 
+  },
+
+  // --- Dark Mode / High Contrast (Great for Dark/Midnight/Ocean Canvas Themes) ---
+  { 
+    name: "Midnight Node", 
+    bgColor: "#1e1b4b", 
+    borderColor: "#a5b4fc", 
+    textColor: "#e0e7ff" 
+  },
+  { 
+    name: "Deep Slate", 
+    bgColor: "#0f172a", 
+    borderColor: "#64748b", 
+    textColor: "#f1f5f9" 
+  },
 ];
 
 export interface ThemePanelProps {
@@ -138,7 +228,6 @@ export function ThemePanel({ bgColor, borderColor, textColor, onThemeSelect }: T
     </div>
   );
 }
-
 
 // ─── Icon Panel ───────────────────────────────────────────────────────────────
 
