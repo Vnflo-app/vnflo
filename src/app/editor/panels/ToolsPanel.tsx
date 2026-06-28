@@ -71,14 +71,14 @@ export function ShapePanel({ value, onChange, onAddNode }: ShapePanelProps) {
 
 // ─── Color Panel ─────────────────────────────────────────────────────────────
 
-interface NodeTheme {
+export interface NodeTheme {
   name: string;
   bgColor: string;
   borderColor: string;
   textColor: string;
 }
 
-const NODE_THEMES: NodeTheme[] = [
+export const NODE_THEMES: NodeTheme[] = [
   { name: "Midnight Indigo", bgColor: "#4f46e5", borderColor: "#a5b4fc", textColor: "#ffffff" },
   { name: "Crisp Slate", bgColor: "#ffffff", borderColor: "#94a3b8", textColor: "#0f1b2d" },
   { name: "Vibrant Earth", bgColor: "#d97706", borderColor: "#fde68a", textColor: "#1c1917" },
@@ -88,12 +88,9 @@ const NODE_THEMES: NodeTheme[] = [
   { name: "Monochrome Brutalism", bgColor: "#080808", borderColor: "#ef4444", textColor: "#ffffff" },
 ];
 
-interface ColorPanelProps {
-  bgColor: string;
-  borderColor: string;
-  textColor: string;
+export interface ColorPanelProps extends Omit<NodeTheme, "name"> {
   onChange: (field: "bgColor" | "borderColor" | "textColor", value: string) => void;
-  onThemeSelect?: (theme: { bgColor: string; borderColor: string; textColor: string }) => void;
+  onThemeSelect?: (theme: NodeTheme) => void;
 }
 
 export function ColorPanel({ bgColor, borderColor, textColor, onChange, onThemeSelect }: ColorPanelProps) {
