@@ -1,7 +1,7 @@
 import { type Node, type Edge } from "@xyflow/react";
 import { X, AlignLeft, Plus, Trash2, Sparkles, Code, Layout } from "lucide-react";
 import { type CustomNodeData, type NodeShape } from "../nodes/CustomNode";
-import { ColorPanel } from "./ToolsPanel";
+import { ThemePanel } from "./ToolsPanel";
 import { IconPanel } from "./ToolsPanel";
 import { ImagePanel } from "./ToolsPanel";
 import { ShapePanel } from "./ToolsPanel";
@@ -181,19 +181,10 @@ export function PropertiesPanel({
           {/* Color */}
           <div>
             <label className={labelCls} style={{ color: theme.textMuted }}>Line Color</label>
-            <ColorPanel
+            <ThemePanel
               bgColor={edge.style?.stroke || theme.accent}
               borderColor={edge.style?.stroke || theme.accent}
               textColor={edge.style?.stroke || theme.accent}
-              onChange={(_, val) => {
-                updateEdge({
-                  style: {
-                    ...edge.style,
-                    stroke: val,
-                    strokeWidth: edge.style?.strokeWidth || 2
-                  }
-                });
-              }}
               onThemeSelect={(t) => {
                 updateEdge({
                   style: {
@@ -348,11 +339,10 @@ export function PropertiesPanel({
             {/* Frame Background Color */}
             <div>
               <label className={labelCls} style={{ color: theme.textMuted }}>Background Color</label>
-              <ColorPanel
+              <ThemePanel
                 bgColor={d.bgColor || "#C7C7C7"}
                 borderColor={d.borderColor || theme.nodeBorder}
                 textColor={d.textColor || theme.nodeText}
-                onChange={(f, v) => update({ [f]: v })}
                 onThemeSelect={(t) => update({ bgColor: t.bgColor, borderColor: t.borderColor, textColor: t.textColor })}
               />
             </div>
@@ -587,11 +577,10 @@ export function PropertiesPanel({
             {/* Colors */}
             <div>
               <label className={labelCls} style={{ color: theme.textMuted }}>Colors</label>
-              <ColorPanel
+              <ThemePanel
                 bgColor={d.bgColor || theme.nodeBg}
                 borderColor={d.borderColor || theme.nodeBorder}
                 textColor={d.textColor || theme.nodeText}
-                onChange={(f, v) => update({ [f]: v })}
                 onThemeSelect={(t) => update({ bgColor: t.bgColor, borderColor: t.borderColor, textColor: t.textColor })}
               />
             </div>
@@ -704,11 +693,10 @@ export function PropertiesPanel({
           {/* Colors */}
           <div>
             <label className={labelCls} style={{ color: theme.textMuted }}>Colors</label>
-            <ColorPanel
+            <ThemePanel
               bgColor={d.bgColor || theme.nodeBg}
               borderColor={d.borderColor || theme.nodeBorder}
               textColor={d.textColor || theme.nodeText}
-              onChange={(f, v) => update({ [f]: v })}
               onThemeSelect={(t) => update({ bgColor: t.bgColor, borderColor: t.borderColor, textColor: t.textColor })}
             />
           </div>
