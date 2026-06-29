@@ -108,8 +108,14 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
   const { theme } = useEditorTheme();
   const [hovered, setHovered] = useState(false);
   // Prefer node-level width/height (set by NodeResizer) over data fields
-  const w = nodeWidth ?? d.width ?? 160;
-  const h = nodeHeight ?? d.height ?? 80;
+  let w = nodeWidth ?? d.width ?? 160;
+  let h = nodeHeight ?? d.height ?? 80;
+
+  if (d.shape === "circle") {
+    const size = Math.max(w, h);
+    w = size;
+    h = size;
+  }
   const connection = useConnection();
   const isConnecting = connection.inProgress;
 
@@ -239,6 +245,7 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
         isVisible={selected}
         minWidth={isSubNode ? 40 : 60}
         minHeight={isSubNode ? 20 : 40}
+        keepAspectRatio={d.shape === "circle"}
         handleStyle={{ width: 6, height: 6, background: `${theme.accent}4d`, border: `1.5px solid ${theme.accent}99`, borderRadius: "50%" }}
         lineStyle={{ borderColor: theme.accent, borderWidth: 1 }}
       />
