@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     const { uid } = user;
-    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = await req.json().catch(() => ({}));
+    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, planType } = await req.json().catch(() => ({}));
 
     if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
       return NextResponse.json({ error: "Missing required verification parameters" }, { status: 400 });
@@ -39,14 +39,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
 
-    const pendingPlanType = userData.pending_plan_type || "monthly";
-
     const updates = {
-      subscription_status: "active",
-      subscription_plan: pendingPlanType === "annual" ? "pro_annual" : "pro_monthly",
-      subscription_id: razorpay_subscription_id,
-      pending_subscription_id: null,
-      pending_plan_type: null,
+      plan: "pro",
+      razorpay_customer_id: razorpay_subscription_id,
       ai_credits: 50000,
       updated_at: new Date().toISOString(),
     };
@@ -61,6 +56,21 @@ export async function POST(req: Request) {
     if (updateError) {
       throw updateError;
     }
+
+    // 3. Log the payment transaction
+    const resolvedPlanType = planType || "monthly";
+    const paymentAmount = resolvedPlanType === "annual" ? 382800 : 39900; // paise
+
+    await supabaseAdmin.from("payments").insert({
+      user_id: uid,
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature,
+      amount: paymentAmount,
+      currency: "INR",
+      plan_type: resolvedPlanType,
+      status: "success",
+    });
 
     return NextResponse.json({
       success: true,

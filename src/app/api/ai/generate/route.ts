@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { verifyAuth } from "../../authHelper";
 import { supabaseAdmin } from "../../../db/supabaseAdmin";
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     // 3. Fetch User Profile & Credits
     const { data: userData, error: fetchError } = await supabaseAdmin
       .from("profiles")
-      .select("subscription_status, ai_credits")
+      .select("plan, ai_credits")
       .eq("id", uid)
       .single();
 
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User profile not found." }, { status: 404 });
     }
 
-    const isPro = userData.subscription_status === "active";
+    const isPro = userData.plan !== "free";
     // Default to 50,000 if null/undefined for legacy users or initial setup
     let currentCredits = userData.ai_credits !== null && userData.ai_credits !== undefined ? userData.ai_credits : 50000;
 
@@ -92,8 +93,25 @@ export async function POST(req: Request) {
     const completion = await apiRes.json();
     const tokensUsed = completion.usage?.total_tokens ?? 500; // Estimate if usage missing
 
-    // 6. Update Credits
+    // 6. Log AI Usage & Update Credits
     const newCredits = Math.max(0, currentCredits - tokensUsed);
+
+    try {
+      const promptString = JSON.stringify(messages);
+      const promptHash = crypto.createHash("sha256").update(promptString).digest("hex");
+      const selectedModel = model || "nvidia/nemotron-3-ultra-550b-a55b:free";
+      const costUsd = selectedModel.includes(":free") ? 0.0 : Number((tokensUsed * 0.000002).toFixed(6));
+
+      await supabaseAdmin.from("ai_usage_logs").insert({
+        user_id: uid,
+        prompt_hash: promptHash,
+        tokens_used: tokensUsed,
+        cost_usd: costUsd,
+        model_used: selectedModel,
+      });
+    } catch (logErr) {
+      console.error("Failed to insert AI usage log:", logErr);
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from("profiles")
@@ -105,8 +123,6 @@ export async function POST(req: Request) {
 
     if (updateError) {
       console.error("Failed to update credits:", updateError);
-      // We still return the AI response even if credit update fails, 
-      // but you might want to handle this differently depending on strictness
     }
 
     return NextResponse.json({

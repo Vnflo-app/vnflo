@@ -37,8 +37,7 @@ export async function POST(req: Request) {
     const { error: updateError } = await supabaseAdmin
       .from("profiles")
       .update({
-        pending_subscription_id: subscription.id,
-        pending_plan_type: planType,
+        razorpay_customer_id: subscription.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", uid);

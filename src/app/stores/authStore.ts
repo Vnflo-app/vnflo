@@ -85,20 +85,25 @@ function mapApiProfile(profile: any): User {
   } else if (profile?.createdAt) {
     createdAt = typeof profile.createdAt === "number" ? profile.createdAt : Date.parse(profile.createdAt) || Date.now();
   }
+  
+  // Normalize plan to subscription fields for backward compatibility
+  const plan = profile.plan ?? profile.subscriptionPlan ?? "free";
+  const isPro = plan !== "free";
+
   return {
     id: profile.id,
-    username: profile.username ?? "",
+    username: profile.username ?? (profile.full_name || ""),
     email: profile.email ?? "",
-    avatar: profile.avatar ?? "",
-    displayName: profile.display_name ?? profile.displayName ?? "",
+    avatar: profile.avatar_url ?? profile.avatar ?? "",
+    displayName: profile.full_name ?? profile.displayName ?? "",
     bio: profile.bio ?? "",
     website: profile.website ?? "",
     location: profile.location ?? "",
     createdAt,
-    subscriptionStatus: profile.subscription_status ?? profile.subscriptionStatus ?? null,
-    subscriptionPlan: profile.subscription_plan ?? profile.subscriptionPlan ?? null,
-    subscriptionId: profile.subscription_id ?? profile.subscriptionId ?? null,
-    aiCredits: profile.ai_credits !== undefined ? profile.ai_credits : (profile.aiCredits !== undefined ? profile.aiCredits : undefined),
+    subscriptionStatus: isPro ? "active" : null,
+    subscriptionPlan: plan,
+    subscriptionId: profile.razorpay_customer_id ?? profile.subscriptionId ?? null,
+    aiCredits: profile.ai_credits !== undefined ? profile.ai_credits : (profile.aiCredits !== undefined ? profile.aiCredits : 5),
   };
 }
 

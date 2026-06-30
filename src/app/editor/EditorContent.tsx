@@ -22,7 +22,7 @@ import { FrameNode } from "./nodes/FrameNode";
 import { ToolsPanel } from "./panels/ToolsPanel";
 import { PropertiesPanel } from "./panels/PropertiesPanel";
 import { EditorToolbar } from "./components/EditorToolbar";
-import { WebRTCModal } from "./components/WebRTCModal";
+import { LiveCursorsOverlay } from "./components/LiveCursorsOverlay";
 import { CustomConnectionLine } from "./components/CustomConnectionLine";
 import { CanvasContextMenu } from "./components/CanvasContextMenu";
 import { EditableEdge, EdgeEditContext } from "./components/EditableEdge";
@@ -31,7 +31,10 @@ import { TouchDock } from "./components/TouchDock";
 import { ScopedCodeEditorPanel } from "./panels/ScopedCodeEditorPanel";
 import { ScopedAIChatPanel } from "./panels/ScopedAIChatPanel";
 
-import { useWebRTC } from "./hooks/useWebRTC";
+import * as Y from "yjs";
+import { useYjsBinding } from "./hooks/useYjsBinding";
+import { supabase } from "../db/supabase";
+import { toast } from "sonner";
 import { generateId } from "../db/index";
 
 // Hooks
@@ -89,7 +92,6 @@ export function EditorContent() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const [showWebRTC, setShowWebRTC] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showMobileProps, setShowMobileProps] = useState(false);
@@ -105,8 +107,24 @@ export function EditorContent() {
 
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rtc = useWebRTC();
   const fitViewOptions = useMemo(() => ({ padding: 0.1 }), []);
+
+  // Yjs Collaboration & Sync states
+  const ydoc = useMemo(() => new Y.Doc(), []);
+  const [remoteCursors, setRemoteCursors] = useState<any[]>([]);
+  const [collabStatus, setCollabStatus] = useState<"idle" | "creating" | "waiting" | "connecting" | "connected" | "error">("idle");
+  const channelRef = useRef<any>(null);
+
+  const myCursorColor = useMemo(() => {
+    const CURSOR_COLORS = [
+      "#a78bfa", "#34d399", "#fbbf24", "#f87171", "#38bdf8",
+      "#e879f9", "#fb923c", "#2dd4bf", "#818cf8", "#f472b6",
+    ];
+    return CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)];
+  }, []);
+
+  // Bind Yjs Maps to ReactFlow state
+  useYjsBinding(ydoc, nodes, edges, setNodes, setEdges, loaded);
 
   // Sync tool colors when theme changes
   useEffect(() => {
@@ -124,11 +142,39 @@ export function EditorContent() {
       const d = await getDiagram(diagramId);
       if (!d || d.ownerId !== user.id) { navigate("/dashboard"); return; }
       setDiagramName(d.name);
-      setNodes(cleanOrphanedNodes((d.nodes as Node[]) ?? []));
-      setEdges(((d.edges as Edge[]) ?? []).map((e) => ({ ...e, reconnectable: true })));
+      
+      // Try to hydrate the Yjs doc from stored binary state
+      let yjsLoadedOk = false;
+      if (d.yjsState) {
+        try {
+          const bytes = Uint8Array.from(atob(d.yjsState), (c) => c.charCodeAt(0));
+          // Validate: a real Yjs update is at least a few bytes
+          if (bytes.length > 2) {
+            Y.applyUpdate(ydoc, bytes, "init");
+            yjsLoadedOk = true;
+          }
+        } catch (err) {
+          console.warn("Yjs state in DB is corrupted or incompatible, starting fresh:", err);
+        }
+      }
+
+      const yNodes = ydoc.getMap<any>("nodes");
+      const yEdges = ydoc.getMap<any>("edges");
+
+      if (yjsLoadedOk && yNodes.size > 0) {
+        // Successfully loaded from Yjs binary state
+        setNodes(cleanOrphanedNodes(Array.from(yNodes.values())));
+        setEdges(Array.from(yEdges.values()).map((e) => ({ ...e, reconnectable: true })));
+      } else {
+        // No valid Yjs state — start with empty canvas
+        // (old diagrams' nodes/edges JSON columns no longer exist in the new schema)
+        setNodes([]);
+        setEdges([]);
+      }
+
       setLoaded(true);
     })();
-  }, [diagramId, user, loaded]);
+  }, [diagramId, user, loaded, ydoc]);
 
   useEffect(() => {
     if (loaded && rfInstance) setTimeout(() => rfInstance.fitView(fitViewOptions), 150);
@@ -144,32 +190,136 @@ export function EditorContent() {
     }
   }, [activeFrameId, activeFrameMode]);
 
-  // ── WebRTC Remote Sync ───────────────────────────────────
+  // ── Supabase Realtime Channels Collaboration ─────────────
   useEffect(() => {
-    rtc.onRemoteUpdate((n, e) => {
-      setNodes(cleanOrphanedNodes(n as Node[]));
-      setEdges(((e as Edge[]) ?? []).map((edge) => ({ ...edge, reconnectable: true })));
+    if (!diagramId || !user || !loaded) return;
+
+    const channel = supabase.channel(`diagram:${diagramId}`, {
+      config: {
+        broadcast: { self: false },
+        presence: { key: user.id },
+      },
     });
-  }, []);
+    channelRef.current = channel;
+
+    channel
+      .on("broadcast", { event: "yjs-update" }, ({ payload }) => {
+        if (!payload || !payload.update) return;
+        try {
+          const binary = atob(payload.update);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          Y.applyUpdate(ydoc, bytes, "remote");
+        } catch (err) {
+          console.error("Failed to apply remote broadcast update:", err);
+        }
+      })
+      .on("broadcast", { event: "cursor-move" }, ({ payload }) => {
+        if (!payload) return;
+        setRemoteCursors((prev) => {
+          const filtered = prev.filter((c) => c.peerId !== payload.peerId);
+          return [...filtered, payload];
+        });
+      })
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        const activeUserIds = new Set(Object.keys(state));
+        setRemoteCursors((prev) => prev.filter((c) => activeUserIds.has(c.peerId)));
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          setCollabStatus("connected");
+          await channel.track({
+            peerId: user.id,
+            name: user.displayName || user.username || "Peer",
+            color: myCursorColor,
+          });
+        } else {
+          setCollabStatus("idle");
+        }
+      });
+
+    const handleDocUpdate = (update: Uint8Array, origin: any) => {
+      if (origin === "remote" || origin === "init") return;
+      const base64 = btoa(String.fromCharCode(...update));
+      channel.send({
+        type: "broadcast",
+        event: "yjs-update",
+        payload: { update: base64 },
+      });
+    };
+
+    ydoc.on("update", handleDocUpdate);
+
+    return () => {
+      ydoc.off("update", handleDocUpdate);
+      channel.unsubscribe();
+      channelRef.current = null;
+    };
+  }, [diagramId, user, loaded, ydoc, myCursorColor]);
 
   // ── Auto-Save ────────────────────────────────────────────
+  const saveDiagramDoc = useCallback(async () => {
+    if (!diagramId) return;
+    setIsSaving(true);
+    const state = Y.encodeStateAsUpdate(ydoc);
+    const base64 = btoa(String.fromCharCode(...state));
+
+    const d = await getDiagram(diagramId);
+    if (d) {
+      await updateDiagram({
+        ...d,
+        name: diagramName,
+        yjsState: base64,
+        updatedAt: Date.now(),
+      });
+    }
+    setIsSaving(false);
+    setIsDirty(false);
+  }, [diagramId, diagramName, ydoc, getDiagram, updateDiagram]);
+
   const scheduleSave = useCallback(() => {
     setIsDirty(true);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      if (!diagramId) return;
-      setIsSaving(true);
-      const d = await getDiagram(diagramId);
-      if (!d) { setIsSaving(false); return; }
-      await updateDiagram({ ...d, name: diagramName, nodes, edges });
-      setIsSaving(false);
-      setIsDirty(false);
-      rtc.sendNodes(nodes, edges);
+      await saveDiagramDoc();
     }, 1500);
-  }, [diagramId, diagramName, nodes, edges, getDiagram, updateDiagram, setIsSaving, setIsDirty, rtc]);
+  }, [saveDiagramDoc]);
 
-  useEffect(() => { if (loaded) scheduleSave(); }, [nodes, edges]);
-  useEffect(() => { if (loaded) scheduleSave(); }, [diagramName]);
+  useEffect(() => {
+    if (!loaded) return;
+    ydoc.on("update", scheduleSave);
+    return () => {
+      ydoc.off("update", scheduleSave);
+    };
+  }, [loaded, ydoc, scheduleSave]);
+
+  useEffect(() => {
+    if (loaded) scheduleSave();
+  }, [diagramName]);
+
+  const handleContainerMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!channelRef.current || !user || collabStatus !== "connected") return;
+    const rect = reactFlowWrapperRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    channelRef.current.send({
+      type: "broadcast",
+      event: "cursor-move",
+      payload: {
+        peerId: user.id,
+        name: user.displayName || user.username || "Peer",
+        color: myCursorColor,
+        x,
+        y,
+      },
+    });
+  }, [user, collabStatus, myCursorColor]);
 
   // ── Z-Index & Visibility Calculations ────────────────────
   const nodesWithZIndex = useMemo(() => {
@@ -328,7 +478,7 @@ export function EditorContent() {
     handleUndo, handleRedo, handleCut, handleCopy, handlePaste, handleDuplicate, handleSelectAll,
     handleChangeOrder, handleAddComment, handleGroupSelection, handleCreateFigure,
     activePanel, setActivePanel, rfInstance, handleReset, handleDeleteSelected, handleAutoLayout, spawnNode,
-    diagramId, diagramName, nodes, edges, updateDiagram, getDiagram, setIsSaving, setIsDirty, rtc,
+    handleSave: saveDiagramDoc,
   });
 
   // ── Escape Key for Stamped Template ──────────────────────
@@ -363,17 +513,13 @@ export function EditorContent() {
   }, [updateEditingEdgeId]);
 
   const handleSave = useCallback(() => {
-    if (diagramId) {
-      setIsSaving(true);
-      getDiagram(diagramId).then(async (d) => {
-        if (!d) { setIsSaving(false); return; }
-        await updateDiagram({ ...d, name: diagramName, nodes, edges });
-        setIsSaving(false);
-        setIsDirty(false);
-        rtc.sendNodes(nodes, edges);
-      });
-    }
-  }, [diagramId, getDiagram, updateDiagram, diagramName, nodes, edges, setIsSaving, setIsDirty, rtc]);
+    saveDiagramDoc();
+  }, [saveDiagramDoc]);
+
+  const handleOpenCollab = useCallback(() => {
+    handleCopyLink();
+    toast.success("Collaboration link copied to clipboard! Anyone with this link can join in real-time.");
+  }, [handleCopyLink]);
 
   // ── Render Gates ─────────────────────────────────────────
   if (!loaded) {
@@ -421,13 +567,13 @@ export function EditorContent() {
           onUndo={handleUndo}
           onRedo={handleRedo}
           onExport={handleExport}
-          onOpenWebRTC={() => setShowWebRTC(true)}
-          webrtcStatus={rtc.status}
+          onOpenWebRTC={handleOpenCollab}
+          webrtcStatus={collabStatus}
           onReset={handleReset}
         />
       </div>
 
-      <div ref={reactFlowWrapperRef} className="flex-1 relative overflow-hidden" onClick={handleCloseMenu}>
+      <div ref={reactFlowWrapperRef} className="flex-1 relative overflow-hidden" onClick={handleCloseMenu} onMouseMove={handleContainerMouseMove}>
         {stampedTemplate && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-full flex items-center gap-3 border shadow-2xl z-50 animate-in slide-in-from-top duration-300" style={{ background: theme.panel, borderColor: theme.accent, backdropFilter: "blur(12px)" }}>
             <div className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: theme.accent }} />
@@ -476,16 +622,16 @@ export function EditorContent() {
             {isTouchDevice && (
               <Panel position="bottom-center" style={{ marginBottom: 20 }} className="nodrag nopan">
                 <TouchDock
-                  canUndo={canUndo}
-                  canRedo={canRedo}
-                  onUndo={handleUndo}
-                  onRedo={handleRedo}
-                  spawnNode={spawnNode}
-                  rfInstance={rfInstance}
-                  handleAutoLayout={handleAutoLayout}
-                  selectedNodes={selectedNodes}
-                  handleDeleteSelected={handleDeleteSelected}
-                  handleSave={handleSave}
+                   canUndo={canUndo}
+                   canRedo={canRedo}
+                   onUndo={handleUndo}
+                   onRedo={handleRedo}
+                   spawnNode={spawnNode}
+                   rfInstance={rfInstance}
+                   handleAutoLayout={handleAutoLayout}
+                   selectedNodes={selectedNodes}
+                   handleDeleteSelected={handleDeleteSelected}
+                   handleSave={handleSave}
                 />
               </Panel>
             )}
@@ -746,7 +892,7 @@ export function EditorContent() {
         )}
       </div>
 
-      {showWebRTC && <WebRTCModal rtc={rtc} onClose={() => setShowWebRTC(false)} />}
+      <LiveCursorsOverlay cursors={remoteCursors} />
     </div>
   );
 }

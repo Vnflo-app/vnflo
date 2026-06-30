@@ -19,15 +19,7 @@ interface UseKeyboardShortcutsArgs {
   handleDeleteSelected: () => void;
   handleAutoLayout: (dir: any) => void;
   spawnNode: (shape: any) => void;
-  diagramId: string;
-  diagramName: string;
-  nodes: any[];
-  edges: any[];
-  updateDiagram: (d: any) => Promise<void>;
-  getDiagram: (id: string) => Promise<any>;
-  setIsSaving: (s: boolean) => void;
-  setIsDirty: (d: boolean) => void;
-  rtc: any;
+  handleSave: () => void;
 }
 
 export function useKeyboardShortcuts({
@@ -36,8 +28,7 @@ export function useKeyboardShortcuts({
   handleAddComment, handleGroupSelection, handleCreateFigure,
   activePanel, setActivePanel, rfInstance, handleReset,
   handleDeleteSelected, handleAutoLayout, spawnNode,
-  diagramId, diagramName, nodes, edges, updateDiagram, getDiagram,
-  setIsSaving, setIsDirty, rtc
+  handleSave
 }: UseKeyboardShortcutsArgs) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -61,16 +52,7 @@ export function useKeyboardShortcuts({
       else if (isCmd && keyLower === "l") { e.preventDefault(); handleAutoLayout("TB"); }
       else if (isCmd && keyLower === "s") {
         e.preventDefault();
-        if (diagramId) {
-          setIsSaving(true);
-          getDiagram(diagramId).then(async (d) => {
-            if (!d) { setIsSaving(false); return; }
-            await updateDiagram({ ...d, name: diagramName, nodes, edges });
-            setIsSaving(false);
-            setIsDirty(false);
-            rtc.sendNodes(nodes, edges);
-          });
-        }
+        handleSave();
       }
       else if (isCmd && e.key === "[") { e.preventDefault(); handleChangeOrder("backward"); }
       else if (isCmd && e.key === "]") { e.preventDefault(); handleChangeOrder("forward"); }
@@ -106,7 +88,6 @@ export function useKeyboardShortcuts({
     handleAddComment, handleGroupSelection, handleCreateFigure,
     activePanel, setActivePanel, rfInstance, handleReset,
     handleDeleteSelected, handleAutoLayout, spawnNode,
-    diagramId, diagramName, nodes, edges, updateDiagram, getDiagram,
-    setIsSaving, setIsDirty, rtc
+    handleSave
   ]);
 }

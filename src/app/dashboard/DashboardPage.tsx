@@ -110,8 +110,8 @@ function DiagramCard({
             backgroundSize: "24px 24px",
           }}
         />
-        {diagram.thumbnail ? (
-          <img src={diagram.thumbnail} alt="" className="w-full h-full object-cover opacity-60" />
+        {diagram.thumbnailUrl ? (
+          <img src={diagram.thumbnailUrl} alt="" className="w-full h-full object-cover opacity-60" />
         ) : (
           <Icon className="w-8 @[260px]:w-10 @[260px]:h-10 opacity-40" style={{ color }} />
         )}
@@ -152,7 +152,7 @@ function DiagramCard({
           <span
             className="text-xs px-2 py-0.5 rounded-full border border-white/20 bg-black/40 text-white/60"
           >
-            {(diagram.nodes as unknown[]).length} nodes
+            {(diagram.metadata as any)?.nodeCount ?? 0} nodes
           </span>
         </div>
       </div>

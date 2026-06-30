@@ -75,6 +75,7 @@
     "typescript": "^6.0.3",
     "vaul": "1.1.2",
     "vercel": "^54.14.2",
+    "yjs": "^13.6.31",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
