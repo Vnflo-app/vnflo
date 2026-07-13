@@ -184,6 +184,18 @@ export const NODE_THEMES: NodeTheme[] = [
     borderColor: "animated-aurora", 
     textColor: "#f0f0f0" 
   },
+  { 
+    name: "Aurora Fill", 
+    bgColor: "animated-aurora", 
+    borderColor: "#475569", 
+    textColor: "#ffffff" 
+  },
+  { 
+    name: "Aurora Full", 
+    bgColor: "animated-aurora", 
+    borderColor: "animated-aurora", 
+    textColor: "#ffffff" 
+  },
 ];
 
 export interface ThemePanelProps {
@@ -216,29 +228,48 @@ export function ThemePanel({ bgColor, borderColor, textColor, onThemeSelect }: T
               }}
             >
               {/* Visual Preview */}
-              {t.borderColor === "animated-aurora" ? (
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 aurora-swatch relative overflow-hidden"
-                >
+              {(() => {
+                const hasBorderAurora = t.borderColor === "animated-aurora";
+                const hasFillAurora = t.bgColor === "animated-aurora";
+
+                if (hasFillAurora && hasBorderAurora) {
+                  // Aurora Full: animated border + animated fill
+                  return (
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 aurora-swatch relative overflow-hidden">
+                      <div className="absolute inset-[2px] rounded-[5px] flex items-center justify-center aurora-fill-swatch">
+                        <span className="text-[10px] font-bold relative z-10" style={{ color: t.textColor }}>Aa</span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (hasFillAurora) {
+                  // Aurora Fill: animated fill + static border
+                  return (
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 aurora-fill-swatch relative overflow-hidden border" style={{ borderColor: t.borderColor }}>
+                      <span className="text-[10px] font-bold relative z-10" style={{ color: t.textColor }}>Aa</span>
+                    </div>
+                  );
+                }
+                if (hasBorderAurora) {
+                  // Aurora Glow: animated border + static fill
+                  return (
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 aurora-swatch relative overflow-hidden">
+                      <div className="absolute inset-[2px] rounded-[5px] flex items-center justify-center" style={{ backgroundColor: t.bgColor }}>
+                        <span className="text-[10px] font-bold" style={{ color: t.textColor }}>Aa</span>
+                      </div>
+                    </div>
+                  );
+                }
+                // Normal static theme
+                return (
                   <div
-                    className="absolute inset-[2px] rounded-[5px] flex items-center justify-center"
-                    style={{ backgroundColor: t.bgColor }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0"
+                    style={{ backgroundColor: t.bgColor, borderColor: t.borderColor, color: t.textColor }}
                   >
-                    <span className="text-[10px] font-bold" style={{ color: t.textColor }}>Aa</span>
+                    <span className="text-[10px] font-bold">Aa</span>
                   </div>
-                </div>
-              ) : (
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center border flex-shrink-0"
-                  style={{
-                    backgroundColor: t.bgColor,
-                    borderColor: t.borderColor,
-                    color: t.textColor,
-                  }}
-                >
-                  <span className="text-[10px] font-bold">Aa</span>
-                </div>
-              )}
+                );
+              })()}
               <div className="min-w-0">
                 <p className="text-[9px] font-semibold truncate" style={{ color: theme.textPrimary }}>{t.name}</p>
               </div>
