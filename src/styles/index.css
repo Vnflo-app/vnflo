@@ -187,3 +187,61 @@
 .react-flow__edge-label-renderer {
   z-index: 9999 !important;
 }
+
+/* ── Animated Aurora Border for nodes ─────────────────────────────────── */
+@property --aurora-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes aurora-rotate {
+  to {
+    --aurora-angle: 360deg;
+  }
+}
+
+.aurora-border-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--aurora-angle),
+    #ff007f, #7b2cbf, #0ea5e9, #22c55e, #f97316, #e11d48, #ff007f
+  );
+  animation: aurora-rotate 3s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.aurora-border-glow::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: var(--aurora-inner-bg, #080808);
+}
+
+/* Subtle animated outer glow for the aurora nodes */
+.aurora-border-shadow {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--aurora-angle),
+    #ff007f44, #7b2cbf44, #0ea5e944, #22c55e44, #f9731644, #e11d4844, #ff007f44
+  );
+  animation: aurora-rotate 3s linear infinite;
+  filter: blur(6px);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Preview swatch animation (used in ThemePanel) */
+.aurora-swatch {
+  background: conic-gradient(
+    from var(--aurora-angle),
+    #ff007f, #7b2cbf, #0ea5e9, #22c55e, #f97316, #e11d48, #ff007f
+  );
+  animation: aurora-rotate 3s linear infinite;
+}

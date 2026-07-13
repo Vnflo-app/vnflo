@@ -128,6 +128,7 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
 
   const showHandles = hovered || selected || isConnecting;
   const dashArray = getDashArray(d.borderStyle || "solid", d.borderWidth || 2);
+  const isAurora = d.borderColor === "animated-aurora";
 
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(d.label || "");
@@ -261,11 +262,30 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
           w={w}
           h={h}
           fill={d.bgColor || theme.nodeBg}
-          stroke={selected ? theme.accent : (d.borderColor || theme.accent)}
-          strokeWidth={selected ? Math.max(d.borderWidth || 2, 2) : (d.borderWidth || 2)}
+          stroke={isAurora ? "transparent" : (selected ? theme.accent : (d.borderColor || theme.accent))}
+          strokeWidth={selected && !isAurora ? Math.max(d.borderWidth || 2, 2) : (d.borderWidth || 2)}
           strokeDasharray={dashArray}
         />
       </svg>
+
+      {/* Animated aurora gradient border overlay */}
+      {isAurora && (
+        <>
+          <div
+            className="aurora-border-shadow"
+            style={{
+              borderRadius: d.shape === "circle" ? "50%" : (d.shape === "rounded" ? 14 : 4),
+            }}
+          />
+          <div
+            className="aurora-border-glow"
+            style={{
+              borderRadius: d.shape === "circle" ? "50%" : (d.shape === "rounded" ? 14 : 4),
+              '--aurora-inner-bg': d.bgColor || theme.nodeBg,
+            } as React.CSSProperties}
+          />
+        </>
+      )}
 
       {/* Selection glow */}
       {selected && (
@@ -274,7 +294,9 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
             position: "absolute",
             inset: -3,
             borderRadius: d.shape === "circle" ? "50%" : 10,
-            boxShadow: `0 0 0 2px ${theme.accent}60, 0 0 16px ${theme.accent}40`,
+            boxShadow: isAurora
+              ? `0 0 0 2px rgba(124,58,237,0.5), 0 0 20px rgba(124,58,237,0.3), 0 0 20px rgba(14,165,233,0.2)`
+              : `0 0 0 2px ${theme.accent}60, 0 0 16px ${theme.accent}40`,
             pointerEvents: "none",
           }}
         />
