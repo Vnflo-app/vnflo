@@ -103,6 +103,24 @@ function getDashArray(style: string, width: number): string | undefined {
   return undefined;
 }
 
+function getShapeClipPath(shape: NodeShape): string | undefined {
+  switch (shape) {
+    case "diamond":
+    case "decision":
+      return "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)";
+    case "hexagon":
+      return "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)";
+    case "parallelogram":
+      return "polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)";
+    case "triangle":
+      return "polygon(50% 0%, 100% 100%, 0% 100%)";
+    case "process":
+      return "polygon(10% 0%, 100% 0%, 100% 100%, 10% 100%)";
+    default:
+      return undefined; // rect, rounded, circle, cloud, cylinder use border-radius
+  }
+}
+
 export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: nodeHeight }: NodeProps) => {
   const d = data as unknown as CustomNodeData;
   const { theme } = useEditorTheme();
@@ -128,7 +146,9 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
 
   const showHandles = hovered || selected || isConnecting;
   const dashArray = getDashArray(d.borderStyle || "solid", d.borderWidth || 2);
-  const isAurora = d.borderColor === "animated-aurora";
+  const isAuroraBorder = d.borderColor === "animated-aurora";
+  const isAuroraFill = d.bgColor === "animated-aurora";
+  const isAnyAurora = isAuroraBorder || isAuroraFill;
 
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(d.label || "");
@@ -261,15 +281,26 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
           shape={d.shape || "rect"}
           w={w}
           h={h}
-          fill={d.bgColor || theme.nodeBg}
-          stroke={isAurora ? "transparent" : (selected ? theme.accent : (d.borderColor || theme.accent))}
-          strokeWidth={selected && !isAurora ? Math.max(d.borderWidth || 2, 2) : (d.borderWidth || 2)}
+          fill={isAuroraFill ? "transparent" : (d.bgColor || theme.nodeBg)}
+          stroke={isAuroraBorder ? "transparent" : (selected ? theme.accent : (d.borderColor || theme.accent))}
+          strokeWidth={selected && !isAuroraBorder ? Math.max(d.borderWidth || 2, 2) : (d.borderWidth || 2)}
           strokeDasharray={dashArray}
         />
       </svg>
 
+      {/* Animated aurora gradient fill overlay */}
+      {isAuroraFill && (
+        <div
+          className="aurora-fill-gradient"
+          style={{
+            borderRadius: d.shape === "circle" ? "50%" : (d.shape === "rounded" ? 12 : 2),
+            clipPath: getShapeClipPath(d.shape || "rect"),
+          }}
+        />
+      )}
+
       {/* Animated aurora gradient border overlay */}
-      {isAurora && (
+      {isAuroraBorder && (
         <>
           <div
             className="aurora-border-shadow"
@@ -278,10 +309,10 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
             }}
           />
           <div
-            className="aurora-border-glow"
+            className={`aurora-border-glow${isAuroraFill ? ' aurora-border-glow--no-mask' : ''}`}
             style={{
               borderRadius: d.shape === "circle" ? "50%" : (d.shape === "rounded" ? 14 : 4),
-              '--aurora-inner-bg': d.bgColor || theme.nodeBg,
+              ...(!isAuroraFill && { '--aurora-inner-bg': d.bgColor || theme.nodeBg }),
             } as React.CSSProperties}
           />
         </>
@@ -294,7 +325,7 @@ export const CustomNode = memo(({ id, data, selected, width: nodeWidth, height: 
             position: "absolute",
             inset: -3,
             borderRadius: d.shape === "circle" ? "50%" : 10,
-            boxShadow: isAurora
+            boxShadow: isAnyAurora
               ? `0 0 0 2px rgba(124,58,237,0.5), 0 0 20px rgba(124,58,237,0.3), 0 0 20px rgba(14,165,233,0.2)`
               : `0 0 0 2px ${theme.accent}60, 0 0 16px ${theme.accent}40`,
             pointerEvents: "none",

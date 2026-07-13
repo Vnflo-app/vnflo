@@ -222,6 +222,11 @@
   background: var(--aurora-inner-bg, #080808);
 }
 
+/* When both fill and border are aurora, make the inner mask transparent */
+.aurora-border-glow--no-mask::after {
+  background: transparent;
+}
+
 /* Subtle animated outer glow for the aurora nodes */
 .aurora-border-shadow {
   position: absolute;
@@ -244,4 +249,34 @@
     #ff007f, #7b2cbf, #0ea5e9, #22c55e, #f97316, #e11d48, #ff007f
   );
   animation: aurora-rotate 3s linear infinite;
+}
+
+/* ── Animated Aurora Fill for nodes ───────────────────────────────────── */
+@keyframes aurora-fill-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.aurora-fill-gradient {
+  position: absolute;
+  inset: 1px;
+  background: linear-gradient(
+    270deg,
+    #ff007f, #7b2cbf, #0ea5e9, #22c55e, #f97316, #e11d48, #ff007f
+  );
+  background-size: 600% 100%;
+  animation: aurora-fill-shift 8s ease infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Preview swatch for animated fill */
+.aurora-fill-swatch {
+  background: linear-gradient(
+    270deg,
+    #ff007f, #7b2cbf, #0ea5e9, #22c55e, #f97316, #e11d48, #ff007f
+  );
+  background-size: 600% 100%;
+  animation: aurora-fill-shift 8s ease infinite;
 }
