@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     let updated = false;
     const updates: any = {};
 
-    if (profile.subscription_status === "active" && (profile.ai_credits === null || profile.ai_credits === undefined)) {
+    if (profile.plan !== "free" && (profile.ai_credits === null || profile.ai_credits === undefined)) {
       updates.ai_credits = 50000;
       updated = true;
     }
@@ -61,18 +61,14 @@ export async function PATCH(req: Request) {
 
     // Map allowed frontend camelCase fields to Postgres snake_case columns
     const updates: any = {};
-    if (typeof body.displayName === "string") updates.display_name = body.displayName;
-    if (typeof body.bio === "string") updates.bio = body.bio;
-    if (typeof body.website === "string") updates.website = body.website;
-    if (typeof body.location === "string") updates.location = body.location;
-    if (typeof body.avatar === "string") updates.avatar = body.avatar;
-    if (typeof body.username === "string") updates.username = body.username;
+    if (typeof body.displayName === "string") updates.full_name = body.displayName;
+    if (typeof body.avatar === "string") updates.avatar_url = body.avatar;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No valid fields provided for update" }, { status: 400 });
     }
 
-    if (updates.avatar && updates.avatar.length > 1000000) {
+    if (updates.avatar_url && updates.avatar_url.length > 1000000) {
       return NextResponse.json({ error: "Avatar image is too large. Please upload an image under 1MB." }, { status: 400 });
     }
 

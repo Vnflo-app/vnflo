@@ -1,5 +1,12 @@
 import { motion } from "motion/react";
-import { type RemoteCursor } from "../hooks/useWebRTC";
+
+export interface RemoteCursor {
+  peerId: string;
+  x: number;
+  y: number;
+  color: string;
+  name: string;
+}
 
 interface LiveCursorsOverlayProps {
   cursors: RemoteCursor[];

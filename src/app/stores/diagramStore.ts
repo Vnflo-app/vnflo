@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import * as Y from "yjs";
 import {
   type DiagramData,
   getDiagramsByOwner,
@@ -30,13 +31,26 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   },
 
   createDiagram: async (name, ownerId, nodes = [], edges = []) => {
+    const ydoc = new Y.Doc();
+    const yNodes = ydoc.getMap("nodes");
+    const yEdges = ydoc.getMap("edges");
+
+    nodes.forEach((n: any) => yNodes.set(n.id, n));
+    edges.forEach((e: any) => yEdges.set(e.id, e));
+
+    const state = Y.encodeStateAsUpdate(ydoc);
+    const base64 = btoa(String.fromCharCode(...state));
+
     const diagram: DiagramData = {
       id: generateId(),
-      name,
+      workspaceId: null,
       ownerId,
-      nodes,
-      edges,
-      viewport: { x: 0, y: 0, zoom: 1 },
+      name,
+      description: null,
+      yjsState: base64,
+      metadata: { viewport: { x: 0, y: 0, zoom: 1 }, nodeCount: nodes.length },
+      thumbnailUrl: null,
+      isPublic: false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };

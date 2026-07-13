@@ -21,14 +21,22 @@ export interface User {
 
 export interface DiagramData {
   id: string;
-  name: string;
+  workspaceId: string | null;
   ownerId: string;
-  nodes: unknown[];
-  edges: unknown[];
-  viewport?: { x: number; y: number; zoom: number };
-  thumbnail?: string;
+  name: string; // Maps to 'title' in DB
+  description: string | null;
+  yjsState: string | null; // base64 representation for transport
+  metadata: {
+    viewport: { x: number; y: number; zoom: number };
+    theme?: string;
+    nodeCount?: number;
+  };
+  thumbnailUrl: string | null;
+  isPublic: boolean;
   createdAt: number;
   updatedAt: number;
+  nodes?: unknown[]; // Backwards compatibility for template initialization
+  edges?: unknown[]; // Backwards compatibility for template initialization
 }
 
 export interface Setting {
@@ -58,16 +66,41 @@ export function generateId(): string {
   return crypto.randomUUID();
 }
 
+function bytesToHex(bytes: Uint8Array): string {
+  let hex = "\\x";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
 // Helper to map frontend camelCase DiagramData to database snake_case fields
 function toDbDiagram(d: DiagramData) {
+  let yjsHex: string | null = null;
+  if (d.yjsState) {
+    const binStr = atob(d.yjsState);
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+      bytes[i] = binStr.charCodeAt(i);
+    }
+    yjsHex = bytesToHex(bytes);
+  }
+
+  const nodeCount = d.nodes ? d.nodes.length : (d.metadata as any)?.nodeCount ?? 0;
+
   return {
     id: d.id,
-    name: d.name,
+    workspace_id: d.workspaceId || null,
     owner_id: d.ownerId,
-    nodes: d.nodes,
-    edges: d.edges,
-    viewport: d.viewport || { x: 0, y: 0, zoom: 1 },
-    thumbnail: d.thumbnail || null,
+    title: d.name || "Untitled Diagram",
+    description: d.description || null,
+    yjs_state: yjsHex,
+    metadata: {
+      ...(d.metadata || { viewport: { x: 0, y: 0, zoom: 1 } }),
+      nodeCount,
+    },
+    thumbnail_url: d.thumbnailUrl || null,
+    is_public: d.isPublic || false,
     created_at: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
     updated_at: new Date(d.updatedAt || Date.now()).toISOString(),
   };
@@ -75,16 +108,41 @@ function toDbDiagram(d: DiagramData) {
 
 // Helper to map database snake_case fields to frontend camelCase DiagramData
 function fromDbDiagram(row: any): DiagramData {
+  let yjsStateStr: string | null = null;
+  if (row.yjs_state) {
+    if (row.yjs_state instanceof Uint8Array) {
+      yjsStateStr = btoa(String.fromCharCode(...row.yjs_state));
+    } else if (typeof row.yjs_state === "string") {
+      if (row.yjs_state.startsWith("\\x")) {
+        const hex = row.yjs_state.slice(2);
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < bytes.length; i++) {
+          bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+        }
+        yjsStateStr = btoa(String.fromCharCode(...bytes));
+      } else {
+        yjsStateStr = row.yjs_state;
+      }
+    } else {
+      const bytes = new Uint8Array(row.yjs_state);
+      yjsStateStr = btoa(String.fromCharCode(...bytes));
+    }
+  }
+
   return {
     id: row.id,
-    name: row.name,
+    workspaceId: row.workspace_id || null,
     ownerId: row.owner_id,
-    nodes: row.nodes || [],
-    edges: row.edges || [],
-    viewport: row.viewport || { x: 0, y: 0, zoom: 1 },
-    thumbnail: row.thumbnail || undefined,
+    name: row.title || "Untitled Diagram",
+    description: row.description || null,
+    yjsState: yjsStateStr,
+    metadata: row.metadata || { viewport: { x: 0, y: 0, zoom: 1 } },
+    thumbnailUrl: row.thumbnail_url || null,
+    isPublic: row.is_public || false,
     createdAt: row.created_at ? Date.parse(row.created_at) : Date.now(),
     updatedAt: row.updated_at ? Date.parse(row.updated_at) : Date.now(),
+    nodes: [],
+    edges: [],
   };
 }
 
@@ -115,7 +173,7 @@ export async function getDiagram(id: string): Promise<DiagramData | undefined> {
 export async function getDiagramsByOwner(ownerId: string): Promise<DiagramData[]> {
   const { data, error } = await supabase
     .from("diagrams")
-    .select("*")
+    .select("id, workspace_id, owner_id, title, description, metadata, thumbnail_url, is_public, created_at, updated_at")
     .eq("owner_id", ownerId)
     .order("updated_at", { ascending: false });
 

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { type ReactFlowInstance } from "@xyflow/react";
 import { useEditorStore } from "../../stores/editorStore";
-import { type RTCStatus } from "../hooks/useWebRTC";
+export type RTCStatus = "idle" | "creating" | "waiting" | "connecting" | "connected" | "error";
 import { useEditorTheme, CANVAS_THEMES } from "../context/EditorThemeContext";
 
 interface EditorToolbarProps {

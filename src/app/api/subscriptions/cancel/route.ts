@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
 
-    const subscriptionId = userData.subscription_id;
+    const subscriptionId = userData.razorpay_customer_id;
 
     if (!subscriptionId) {
       return NextResponse.json({ error: "No active subscription found for this user" }, { status: 400 });
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     // 2. Update status in database
     const updates = {
-      subscription_status: "canceled",
+      plan: "free",
       updated_at: new Date().toISOString(),
     };
 

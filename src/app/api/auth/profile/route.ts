@@ -23,16 +23,10 @@ export async function POST(req: Request) {
 
       const newProfile = {
         id: uid,
-        email: email ?? "",
-        username: derivedUsername,
-        display_name: derivedUsername,
-        avatar: "",
-        bio: "",
-        website: "",
-        location: "",
-        subscription_status: null,
-        subscription_plan: null,
-        ai_credits: 0,
+        full_name: derivedUsername,
+        avatar_url: "",
+        plan: "free",
+        ai_credits: 5,
       };
 
       const { data: createdProfile, error: insertError } = await supabaseAdmin
